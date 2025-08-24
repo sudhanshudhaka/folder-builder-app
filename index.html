@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FOLDER BUILDER</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2e3a59;
+            margin-bottom: 1.5rem;
+        }
+
+        .formGroup input {
+            width: 100%;
+            padding: 10px 14px;
+            margin-bottom: 1rem;
+            border: 1px solid #ccd2d8;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        #genButton {
+            width: 100%;
+            background-color: #3a73e0;
+            color: white;
+            font-size: 16px;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #genButton:hover {
+            background-color: #2f5ebf;
+        }
+
+        #statusMsg {
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: bold;
+            color: #3b3b3b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <h1>Folder Builder AI</h1>
+        <div class="formGroup">
+            <input type="text" id="mainFolder" placeholder="boss what kind of name..." /><br>
+            <input type="number" id="subFolderCount" placeholder="how many subfolders boss?" /><br>
+            <textarea id="subFolderName"
+                placeholder="Enter subfolder names (one per line, or leave empty to use prefix)" rows="4"
+                style="width:100%; margin-bottom: 1rem; border: 1px solid #ccd2d8; border-radius: 6px; padding: 10px 14px; font-size: 15px;"></textarea>
+            <input type="text" id="prefix" placeholder="boss do u want to give prefix..." /><br>
+
+            <button id="genButton">generate and download the file</button><br>
+            <div id="statusMsg"></div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script>
+        // All JS code is here
+
+
+        document.getElementById("genButton").addEventListener("click", function () {
+            const mainFolder = document.getElementById("mainFolder").value.trim() || "MY FOLDER";
+            const subFolderCount = parseInt(document.getElementById("subFolderCount").value);
+            const subFolderName = document.getElementById("subFolderName").value;
+            const lines = subFolderName.split("\n").map(line => line.trim()).filter(Boolean);
+            const prefix = document.getElementById("prefix").value;
+
+            if (isNaN(subFolderCount) || subFolderCount <= 0) {
+                document.getElementById("statusMsg").innerText = "🚫 Boss, enter a valid number of subfolders!";
+                return;
+            }
+
+
+
+            const zip = new JSZip();//used to crear new zib file
+            const main = zip.folder(mainFolder);//creat main folder in the zip file
+
+
+            for (let i = 1; i <= subFolderCount; i++) {
+                let name = lines[i - 1] || `${prefix}${i}`;
+                const sub = main.folder(name);//cretae the sub folder throught loop and and give it a name 
+            }
+            // Generate zip file and trigger download
+            zip.generateAsync({ type: "blob" }).then(function (content) {
+                saveAs(content, `${mainFolder}.zip`);
+                document.getElementById("statusMsg").innerText = "✅ Done boss! Check your downloads 📁";
+            });
+
+        });
+
+
+
+    </script>
+</body>
+
+</html>
