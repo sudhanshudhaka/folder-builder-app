@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FOLDER BUILDER</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4f8;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+
+        .app {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 520px;
+            transition: all 0.3s ease;
+        }
+
+        .app:hover {
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
+            transform: translateY(-3px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2e3a59;
+            font-weight: 700;
+            margin-bottom: 1.8rem;
+            letter-spacing: 0.5px;
+        }
+
+
+        .formGroup input,
+        .formGroup textarea {
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 1rem;
+            border: 1px solid #ccd2d8;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .formGroup input:focus,
+        .formGroup textarea:focus {
+            border-color: #3a73e0;
+            box-shadow: 0 0 8px rgba(58, 115, 224, 0.25);
+            outline: none;
+        }
+
+
+        #genButton {
+            width: 100%;
+            background: linear-gradient(135deg, #3a73e0, #5a8dee);
+            color: white;
+            font-size: 16px;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(58, 115, 224, 0.3);
+        }
+
+        #genButton:hover {
+            background: linear-gradient(135deg, #2f5ebf, #4a7be0);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(58, 115, 224, 0.35);
+        }
+
+        #statusMsg {
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: bold;
+            color: #3b3b3b;
+            min-height: 20px;
+        }
+
+
+        .child-folder-label {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #2e3a59;
+        }
+
+        #childFolderContainer input {
+            margin-bottom: 6px;
+        }
+
+
+        #folderPreview {
+            margin-top: 20px;
+            padding: 12px;
+            border: 1px solid #ccd2d8;
+            border-radius: 8px;
+            background: #f7f9fc;
+            font-family: monospace;
+            white-space: pre;
+            max-height: 250px;
+            overflow-y: auto;
+            box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.03);
+        }
+
+
+        #folderPreview::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #folderPreview::-webkit-scrollbar-thumb {
+            background-color: rgba(58, 115, 224, 0.4);
+            border-radius: 4px;
+        }
+
+        #folderPreview::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+
+        ::placeholder {
+            color: #8c98b3;
+            opacity: 1;
+        }
+
+
+        .folder-icon {
+            color: #f5a623;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <h1>Folder Builder AI</h1>
+        <div class="formGroup">
+            <input type="text" id="mainFolder" placeholder="boss what kind of name..." /><br>
+            <input type="number" id="subFolderCount" placeholder="how many subfolders boss?" /><br>
+            <textarea id="subFolderName"
+                placeholder="Enter subfolder names (one per line, or leave empty to use prefix)" rows="4"></textarea>
+            <input type="text" id="prefix" placeholder="boss do u want to give prefix..." /><br>
+
+
+            <div id="childFolderContainer" style="margin-top:10px;"></div>
+
+            <button id="genButton">generate and download the file</button><br>
+            <div id="statusMsg"></div>
+
+            <div id="folderPreview"></div>
+        </div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script>
+
+        function updatePreview() {
+            const subFolderCount = parseInt(document.getElementById("subFolderCount").value);
+            const subFolderName = document.getElementById("subFolderName").value;
+            const lines = subFolderName.split("\n").map(line => line.trim()).filter(Boolean);
+            const prefix = document.getElementById("prefix").value;
+            const mainFolder = document.getElementById("mainFolder").value.trim() || "MY FOLDER";
+
+            let previewText = "📁 " + mainFolder + "/\n";
+
+            for (let i = 1; i <= subFolderCount; i++) {
+                const subName = lines[i - 1] || `${prefix}${i}`;
+                previewText += "  └─ 📁 " + subName + "/\n";
+
+                const childInput = document.querySelector(`.childFolderInput[data-subfolder="${i}"]`);
+                if (childInput && childInput.value.trim()) {
+                    const childNames = childInput.value.split(',').map(c => c.trim()).filter(Boolean);
+                    childNames.forEach(c => {
+                        previewText += "      └─ 📁 " + c + "/\n";
+                    });
+                }
+            }
+
+            document.getElementById("folderPreview").innerText = previewText;
+        }
+
+
+        document.getElementById("subFolderCount").addEventListener("input", function () {
+            const count = parseInt(this.value);
+            const container = document.getElementById("childFolderContainer");
+            container.innerHTML = ''; 
+
+            if (!isNaN(count) && count > 0) {
+                for (let i = 1; i <= count; i++) {
+                    const div = document.createElement('div');
+                    div.style.marginBottom = '10px';
+                    div.innerHTML = `
+                        <div class="child-folder-label">Child folders for Subfolder ${i} (comma separated):</div>
+                        <input type="text" class="childFolderInput" data-subfolder="${i}" placeholder="Child1,Child2,Child3">
+                    `;
+                    container.appendChild(div);
+
+
+                    const input = div.querySelector('input');
+                    input.addEventListener("input", updatePreview);
+                }
+            }
+
+            updatePreview();
+        });
+
+
+        document.getElementById("mainFolder").addEventListener("input", updatePreview);
+        document.getElementById("subFolderName").addEventListener("input", updatePreview);
+        document.getElementById("prefix").addEventListener("input", updatePreview);
+
+
+        document.getElementById("genButton").addEventListener("click", function () {
+            const mainFolder = document.getElementById("mainFolder").value.trim() || "MY FOLDER";
+            const subFolderCount = parseInt(document.getElementById("subFolderCount").value);
+            const subFolderName = document.getElementById("subFolderName").value;
+            const lines = subFolderName.split("\n").map(line => line.trim()).filter(Boolean);
+            const prefix = document.getElementById("prefix").value;
+
+            if (isNaN(subFolderCount) || subFolderCount <= 0) {
+                document.getElementById("statusMsg").innerText = "🚫 Boss, enter a valid number of subfolders!";
+                return;
+            }
+
+            const zip = new JSZip();
+            const main = zip.folder(mainFolder);
+
+            for (let i = 1; i <= subFolderCount; i++) {
+                const subName = lines[i - 1] || `${prefix}${i}`;
+                const sub = main.folder(subName);
+
+                // Add child folders if any
+                const childInput = document.querySelector(`.childFolderInput[data-subfolder="${i}"]`);
+                if (childInput && childInput.value.trim()) {
+                    const childNames = childInput.value.split(',').map(c => c.trim()).filter(Boolean);
+                    childNames.forEach(c => sub.folder(c));
+                }
+            }
+
+
+            zip.generateAsync({ type: "blob" }).then(function (content) {
+                saveAs(content, `${mainFolder}.zip`);
+                document.getElementById("statusMsg").innerText = "✅ Done boss! Check your downloads 📁";
+            });
+        });
+    </script>
+</body>
+
+</html>
